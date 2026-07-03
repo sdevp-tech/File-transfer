@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نقل الملفات المباشر بين الأجهزة - P2P</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 95vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--secondary), #1a252f);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header-content h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, var(--primary), #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), #9b59b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: minmax(300px, 350px) 1fr minmax(300px, 400px);
+            gap: 0;
+            height: 100%;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: minmax(250px, 300px) 1fr;
+            }
+            
+            .files-sidebar {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .files-sidebar {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .header-content h1 {
+                font-size: 1.8em;
+            }
+        }
+        
+        .sidebar {
+            background: var(--light);
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .files-sidebar {
+            background: var(--light);
+            border-left: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .panel {
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .panel h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .user-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+        
+        .user-item.selected {
+            border-color: var(--success);
+            background: #f0fff4;
+        }
+        
+        .user-item.self {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), #9b59b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: white;
+        }
+        
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            border: 2px solid white;
+        }
+        
+        .select-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .content-area {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #f8fafc;
+            overflow: auto;
+        }
+        
+        .transfer-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .upload-area {
+            border: 3px dashed var(--primary);
+            border-radius: 15px;
+            padding: 40px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .upload-area:hover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .file-info {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .progress-section {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+        
+        .progress-section.show {
+            display: block;
+        }
+        
+        .progress {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, var(--success), #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .btn {
+                min-width: auto;
+                padding: 10px 15px;
+                font-size: 0.8em;
+            }
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #20c997);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #c0392b);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #e67e22);
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 1em;
+        }
+        
+        .status.info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .incoming-requests {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e9ecef;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .received-files-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .qr-container {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 2px solid #e9ecef;
+        }
+        
+        #qrcode {
+            margin: 0 auto;
+            width: 150px;
+            height: 150px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .qr-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .qr-btn {
+            padding: 8px 15px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .qr-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.2em;
+            transition: color 0.3s ease;
+        }
+        
+        .icon-btn:hover {
+            color: var(--secondary);
+        }
+        
+        .icon-btn.delete {
+            color: var(--danger);
+        }
+        
+        .icon-btn.delete:hover {
+            color: #c0392b;
+        }
+        
+        .request-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8em;
+            min-width: auto;
+            flex: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-exchange-alt"></i> نقل الملفات المباشر</h1>
+                <p>إرسال ملفات مباشرة من جهاز إلى جهاز آخر - P2P</p>
+            </div>
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">👤</div>
+                <div>
+                    <div id="userName">جاري التحميل...</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;" id="userStatus">غير متصل</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="panel">
+                    <h3><i class="fas fa-users"></i> المستخدمون المتصلون</h3>
+                    <div id="usersList" class="users-list">
+                        <div class="status info">جاري تحميل قائمة المستخدمين...</div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3><i class="fas fa-bell"></i> طلبات الاستقبال</h3>
+                    <div id="incomingRequests" class="incoming-requests">
+                        <div class="status info">لا توجد طلبات استقبال</div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3><i class="fas fa-qrcode"></i> QR Code للمشاركة</h3>
+                    <div class="qr-container">
+                        <div id="qrcode"></div>
+                        <p style="font-size: 0.8em; color: #6c757d; margin-top: 10px;">
+                            مسح الرمز للدخول السريع
+                        </p>
+                        <div class="qr-actions">
+                            <button onclick="showQRCodePage()" class="qr-btn" style="background: var(--primary); color: white;">
+                                <i class="fas fa-expand"></i> عرض كامل
+                            </button>
+                            <button onclick="downloadQRCode()" class="qr-btn" style="background: var(--success); color: white;">
+                                <i class="fas fa-download"></i> تحميل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="transfer-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-paper-plane"></i> إرسال ملف</h2>
+                    </div>
+
+                    <div id="userSelection" class="status info">
+                        <i class="fas fa-mouse-pointer"></i> اختر مستخدمًا من القائمة لبدء الإرسال
+                    </div>
+
+                    <div id="selectedUserInfo" class="status success hidden">
+                        <i class="fas fa-check-circle"></i> 
+                        <strong>الإرسال إلى:</strong> <span id="targetUserName">-</span>
+                    </div>
+
+                    <div id="uploadArea" class="upload-area">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>اسحب وأفلت الملف هنا</h3>
+                        <p>أو انقر لاختيار الملف</p>
+                        <p style="font-size: 0.8em; margin-top: 10px; color: var(--danger);">
+                            <i class="fas fa-info-circle"></i> يمكنك إرسال ملفات بحجم يصل إلى 2GB
+                        </p>
+                    </div>
+
+                    <input type="file" id="fileInput" class="file-input">
+
+                    <div id="fileInfo" class="file-info">
+                        <h4><i class="fas fa-file"></i> معلومات الملف</h4>
+                        <div class="file-details">
+                            <div class="file-detail">
+                                <span class="file-label">اسم الملف:</span>
+                                <span id="fileName" class="file-value">-</span>
+                            </div>
+                            <div class="file-detail">
+                                <span class="file-label">حجم الملف:</span>
+                                <span id="fileSize" class="file-value">-</span>
+                            </div>
+                            <div class="file-detail">
+                                <span class="file-label">نوع الملف:</span>
+                                <span id="fileType" class="file-value">-</span>
+                            </div>
+                            <div class="file-detail">
+                                <span class="file-label">القطع:</span>
+                                <span id="fileChunks" class="file-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="progressSection" class="progress-section">
+                        <div class="progress-info">
+                            <span>جاري الإرسال:</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div id="progressBar" class="progress-bar">0%</div>
+                        </div>
+                        <div class="progress-stats">
+                            <span id="chunkInfo">0/0 قطعة</span>
+                            <span id="transferSpeed">-</span>
+                        </div>
+                    </div>
+
+                    <div id="transferStatus" class="status info">
+                        <i class="fas fa-info-circle"></i> اختر مستخدمًا وملفًا لبدء الإرسال
+                    </div>
+
+                    <div class="controls">
+                        <button id="sendBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-paper-plane"></i> إرسال الملف
+                        </button>
+                        <button id="pauseBtn" class="btn btn-warning" disabled>
+                            <i class="fas fa-pause"></i> إيقاف مؤقت
+                        </button>
+                        <button id="cancelBtn" class="btn btn-danger" disabled>
+                            <i class="fas fa-times"></i> إلغاء
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="files-sidebar">
+                <div class="panel">
+                    <h3><i class="fas fa-download"></i> الملفات المستقبلة</h3>
+                    <div id="receivedFilesList" class="received-files-list">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>لا توجد ملفات مستقبلة بعد</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3><i class="fas fa-info-circle"></i> معلومات التطبيق</h3>
+                    <div style="font-size: 0.8em; color: #6c757d;">
+                        <p>• الملفات تحفظ تلقائياً على الخادم</p>
+                        <p>• يمكنك تحميلها بأمان</p>
+                        <p>• الملفات تبقى متاحة حتى تحذفها</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const CHUNK_SIZE = 256 * 1024; // زيادة حجم القطعة من 64KB إلى 256KB
+        const socket = io();
+        
+        let currentFile = null;
+        let selectedUser = null;
+        let currentTransfer = null;
+        let isPaused = false;
+        let transferStartTime = null;
+        let chunksSent = 0;
+        let totalChunks = 0;
+        let receivedFiles = [];
+
+        const usersList = document.getElementById('usersList');
+        const userSelection = document.getElementById('userSelection');
+        const selectedUserInfo = document.getElementById('selectedUserInfo');
+        const targetUserName = document.getElementById('targetUserName');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+        const fileChunks = document.getElementById('fileChunks');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const chunkInfo = document.getElementById('chunkInfo');
+        const transferSpeed = document.getElementById('transferSpeed');
+        const sendBtn = document.getElementById('sendBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const transferStatus = document.getElementById('transferStatus');
+        const incomingRequests = document.getElementById('incomingRequests');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userStatus = document.getElementById('userStatus');
+        const receivedFilesList = document.getElementById('receivedFilesList');
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        function initializeApp() {
+            const username = prompt('أدخل اسمك:') || `مستخدم_${Math.random().toString(36).substr(2, 5)}`;
+            const device = navigator.platform || 'جهاز غير معروف';
+            const avatar = getRandomAvatar();
+            
+            socket.emit('register-user', {
+                username: username,
+                device: device,
+                avatar: avatar
+            });
+            
+            userAvatar.textContent = avatar;
+            userName.textContent = username;
+            userStatus.textContent = 'جاري الاتصال...';
+            
+            generateQRCode();
+        }
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('highlight');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('highlight');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('highlight');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        sendBtn.addEventListener('click', startDirectTransfer);
+        pauseBtn.addEventListener('click', togglePause);
+        cancelBtn.addEventListener('click', cancelTransfer);
+
+        socket.on('registration-complete', (data) => {
+            userStatus.textContent = 'متصل';
+            userStatus.style.color = '#27ae60';
+            showNotification('✅ تم الاتصال بالخادم بنجاح', 'success');
+            socket.emit('get-received-files');
+        });
+
+        socket.on('users-list', (users) => {
+            updateUsersList(users);
+        });
+
+        socket.on('user-received-files', (files) => {
+            receivedFiles = files;
+            displayReceivedFiles(files);
+        });
+
+        socket.on('receive-file-request', (data) => {
+            showIncomingRequest(data);
+        });
+
+        socket.on('transfer-request-sent', (data) => {
+            transferStatus.innerHTML = `<i class="fas fa-clock"></i> تم إرسال طلب النقل، في انتظار موافقة المستخدم...`;
+        });
+
+        socket.on('transfer-accepted', (data) => {
+            transferStatus.innerHTML = `<i class="fas fa-check-circle"></i> وافق المستخدم على استقبال الملف! جاري التحضير...`;
+        });
+
+        socket.on('transfer-ready', (data) => {
+            if (currentTransfer) {
+                currentTransfer.transferId = data.transferId;
+                transferStatus.innerHTML = `<i class="fas fa-check-circle"></i> النقل جاهز! جاري البدء في الإرسال...`;
+                startFileTransfer();
+            }
+        });
+
+        socket.on('transfer-rejected', (data) => {
+            transferStatus.innerHTML = `<i class="fas fa-times-circle"></i> رفض المستخدم استقبال الملف: ${data.reason}`;
+            resetTransferUI();
+        });
+
+        socket.on('transfer-progress', (data) => {
+            updateTransferProgress(data);
+        });
+
+        socket.on('transfer-complete', (data) => {
+            if (data.fileInfo) {
+                receivedFiles.push({
+                    id: generateFileId(),
+                    fileName: data.fileInfo.fileName,
+                    fileSize: data.fileInfo.fileSize,
+                    sender: data.fileInfo.sender,
+                    receivedAt: data.fileInfo.receivedAt,
+                    downloadUrl: data.fileUrl
+                });
+                displayReceivedFiles(receivedFiles);
+                showNotification(`📥 تم استقبال ملف جديد: ${data.fileInfo.fileName}`, 'success');
+            }
+            transferComplete(data);
+        });
+
+        socket.on('transfer-cancelled', (data) => {
+            transferStatus.innerHTML = `<i class="fas fa-ban"></i> تم إلغاء النقل: ${data.reason}`;
+            resetTransferUI();
+        });
+
+        socket.on('transfer-error', (error) => {
+            transferStatus.innerHTML = `<i class="fas fa-exclamation-triangle"></i> خطأ: ${error}`;
+            resetTransferUI();
+        });
+
+        socket.on('direct-send-error', (error) => {
+            showNotification(`❌ ${error}`, 'error');
+        });
+
+        socket.on('file-deleted', (data) => {
+            receivedFiles = receivedFiles.filter(file => file.id !== data.fileId);
+            displayReceivedFiles(receivedFiles);
+            showNotification('🗑️ تم حذف الملف', 'success');
+        });
+
+        socket.on('connect', () => {
+            showNotification('🌐 متصل بالخادم', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            userStatus.textContent = 'غير متصل';
+            userStatus.style.color = '#e74c3c';
+            showNotification('❌ انقطع الاتصال بالخادم', 'error');
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            currentFile = files[0];
+            totalChunks = Math.ceil(currentFile.size / CHUNK_SIZE);
+            
+            fileName.textContent = currentFile.name;
+            fileSize.textContent = formatBytes(currentFile.size);
+            fileType.textContent = currentFile.type || 'غير معروف';
+            fileChunks.textContent = totalChunks + ' قطعة';
+            
+            fileInfo.classList.add('show');
+            updateSendButtonState();
+            
+            transferStatus.innerHTML = `<i class="fas fa-check"></i> تم اختيار الملف: <strong>${currentFile.name}</strong>`;
+        }
+
+        function updateUsersList(users) {
+            usersList.innerHTML = '';
+            
+            if (users.length === 0) {
+                usersList.innerHTML = '<div class="status info">لا يوجد مستخدمون متصلون</div>';
+                return;
+            }
+            
+            users.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = `user-item ${user.id === socket.id ? 'self' : ''}`;
+                userElement.innerHTML = `
+                    <div class="user-status" style="background: #27ae60;"></div>
+                    <div class="user-avatar">${user.avatar}</div>
+                    <div class="user-details">
+                        <div class="user-name">${user.username}</div>
+                        <div class="user-device">${user.device}</div>
+                    </div>
+                    ${user.id !== socket.id ? 
+                        `<button class="select-btn" onclick="selectUser('${user.id}', '${user.username}')">
+                            <i class="fas fa-check"></i> اختر
+                        </button>` : 
+                        '<span style="color: #6c757d; font-size: 0.8em;">(أنت)</span>'
+                    }
+                `;
+                usersList.appendChild(userElement);
+            });
+        }
+
+        function selectUser(userId, userName) {
+            selectedUser = userId;
+            targetUserName.textContent = userName;
+            
+            userSelection.classList.add('hidden');
+            selectedUserInfo.classList.remove('hidden');
+            
+            updateSendButtonState();
+            
+            transferStatus.innerHTML = `<i class="fas fa-user-check"></i> تم اختيار <strong>${userName}</strong> للإرسال`;
+        }
+
+        function updateSendButtonState() {
+            sendBtn.disabled = !(currentFile && selectedUser);
+            cancelBtn.disabled = !(currentFile || selectedUser);
+        }
+
+        function startDirectTransfer() {
+            if (!currentFile || !selectedUser) return;
+            
+            currentTransfer = {
+                file: currentFile,
+                targetUser: selectedUser,
+                startTime: new Date(),
+                transferId: null
+            };
+            
+            socket.emit('request-direct-send', {
+                targetUserId: selectedUser,
+                fileName: currentFile.name,
+                fileSize: currentFile.size,
+                fileType: currentFile.type
+            });
+            
+            transferStatus.innerHTML = `<i class="fas fa-paper-plane"></i> جاري إرسال طلب الإرسال إلى المستخدم...`;
+            sendBtn.disabled = true;
+            pauseBtn.disabled = false;
+            cancelBtn.disabled = false;
+        }
+
+        function startFileTransfer() {
+            if (!currentTransfer || !currentTransfer.transferId) {
+                transferStatus.innerHTML = `<i class="fas fa-exclamation-triangle"></i> خطأ: transferId غير معرّف`;
+                return;
+            }
+            
+            transferStartTime = new Date();
+            chunksSent = 0;
+            
+            progressSection.classList.add('show');
+            transferStatus.innerHTML = `<i class="fas fa-rocket"></i> جاري إرسال الملف...`;
+            
+            sendNextChunk();
+        }
+
+        function sendNextChunk() {
+            if (!currentFile || isPaused || !currentTransfer || !currentTransfer.transferId) return;
+            
+            const start = chunksSent * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, currentFile.size);
+            const chunk = currentFile.slice(start, end);
+            const isLastChunk = end >= currentFile.size;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (!currentTransfer.transferId) {
+                    transferStatus.innerHTML = `<i class="fas fa-exclamation-triangle"></i> خطأ: transferId مفقود`;
+                    return;
+                }
+                
+                socket.emit('send-file-chunk', {
+                    transferId: currentTransfer.transferId,
+                    chunkIndex: chunksSent,
+                    totalChunks: totalChunks,
+                    chunkData: e.target.result.split(',')[1],
+                    isLastChunk: isLastChunk
+                });
+                
+                chunksSent++;
+                
+                if (!isLastChunk && !isPaused) {
+                    setTimeout(sendNextChunk, 10);
+                }
+            };
+            
+            reader.readAsDataURL(chunk);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.innerHTML = isPaused ? 
+                '<i class="fas fa-play"></i> متابعة' : 
+                '<i class="fas fa-pause"></i> إيقاف مؤقت';
+            
+            if (isPaused) {
+                transferStatus.innerHTML = '<i class="fas fa-pause"></i> النقل متوقف مؤقتاً';
+            } else {
+                transferStatus.innerHTML = '<i class="fas fa-play"></i> جاري متابعة النقل...';
+                sendNextChunk();
+            }
+        }
+
+        function cancelTransfer() {
+            if (currentTransfer && currentTransfer.transferId) {
+                socket.emit('cancel-transfer', { transferId: currentTransfer.transferId });
+            }
+            resetTransferUI();
+            transferStatus.innerHTML = '<i class="fas fa-ban"></i> تم إلغاء العملية';
+        }
+
+        function updateTransferProgress(data) {
+            const progress = data.progress;
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = progress + '%';
+            progressPercent.textContent = progress + '%';
+            chunkInfo.textContent = `${data.chunkIndex}/${data.totalChunks} قطعة`;
+            
+            if (transferStartTime) {
+                const elapsed = (new Date() - transferStartTime) / 1000;
+                const speed = (data.chunkIndex * CHUNK_SIZE) / elapsed;
+                transferSpeed.textContent = `${formatBytes(speed)}/ثانية`;
+            }
+        }
+
+        function transferComplete(data) {
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            
+            if (data.fileUrl) {
+                transferStatus.innerHTML = `<i class="fas fa-check-circle"></i> تم إرسال الملف <strong>${data.fileName}</strong> بنجاح!`;
+            } else {
+                transferStatus.innerHTML = `<i class="fas fa-check-circle"></i> تم إرسال الملف <strong>${data.fileName}</strong> بنجاح!`;
+            }
+            
+            showNotification('🎉 تم إرسال الملف بنجاح!', 'success');
+            
+            setTimeout(() => {
+                resetTransferUI();
+            }, 5000);
+        }
+
+        function resetTransferUI() {
+            currentFile = null;
+            currentTransfer = null;
+            isPaused = false;
+            chunksSent = 0;
+            totalChunks = 0;
+            
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            progressSection.classList.remove('show');
+            progressBar.style.width = '0%';
+            
+            sendBtn.disabled = true;
+            pauseBtn.disabled = true;
+            cancelBtn.disabled = true;
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> إيقاف مؤقت';
+            
+            if (!selectedUser) {
+                userSelection.classList.remove('hidden');
+                selectedUserInfo.classList.add('hidden');
+            }
+        }
+
+        function showIncomingRequest(request) {
+            let requestsContainer = incomingRequests.querySelector('.requests-container');
+            if (!requestsContainer) {
+                incomingRequests.innerHTML = '<div class="requests-container"></div>';
+                requestsContainer = incomingRequests.querySelector('.requests-container');
+            }
+            
+            const requestElement = document.createElement('div');
+            requestElement.className = 'request-item';
+            requestElement.innerHTML = `
+                <div class="request-header">
+                    <strong><i class="fas fa-user"></i> ${request.fromUser}</strong>
+                    <small>${request.timestamp}</small>
+                </div>
+                <p><i class="fas fa-file"></i> <strong>الملف:</strong> ${request.fileName}</p>
+                <p><i class="fas fa-weight-hanging"></i> <strong>الحجم:</strong> ${formatBytes(request.fileSize)}</p>
+                <div class="request-actions">
+                    <button class="btn btn-success btn-sm" onclick="acceptRequest('${request.transferId}')">
+                        <i class="fas fa-check"></i> قبول
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectRequest('${request.transferId}')">
+                        <i class="fas fa-times"></i> رفض
+                    </button>
+                </div>
+            `;
+            
+            requestsContainer.appendChild(requestElement);
+            
+            showNotification(`📨 طلب استقبال ملف من ${request.fromUser}`, 'info');
+        }
+
+        function acceptRequest(transferId) {
+            socket.emit('accept-file-transfer', { transferId: transferId });
+            
+            document.querySelectorAll('.request-item').forEach(el => {
+                if (el.textContent.includes(transferId)) {
+                    el.remove();
+                }
+            });
+            
+            transferStatus.innerHTML = '<i class="fas fa-download"></i> جاري استقبال الملف...';
+            progressSection.classList.add('show');
+        }
+
+        function rejectRequest(transferId) {
+            socket.emit('reject-file-transfer', { 
+                transferId: transferId, 
+                reason: 'رفض المستخدم' 
+            });
+            
+            document.querySelectorAll('.request-item').forEach(el => {
+                if (el.textContent.includes(transferId)) {
+                    el.remove();
+                }
+            });
+        }
+
+        function displayReceivedFiles(files) {
+            receivedFilesList.innerHTML = '';
+            
+            if (files.length === 0) {
+                receivedFilesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>لا توجد ملفات مستقبلة بعد</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            files.forEach(file => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-item';
+                fileElement.innerHTML = `
+                    <div class="file-info-compact">
+                        <div class="file-name">
+                            <i class="fas fa-file"></i>
+                            ${file.fileName}
+                        </div>
+                        <div class="file-meta">
+                            <span class="file-size">${formatBytes(file.fileSize)}</span>
+                            <span class="file-sender">من: ${file.sender}</span>
+                            <span>${new Date(file.receivedAt).toLocaleDateString('ar-EG')}</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="icon-btn" onclick="downloadFile('${file.downloadUrl}', '${file.fileName}')" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteFile('${file.id}')" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                receivedFilesList.appendChild(fileElement);
+            });
+        }
+
+        function generateQRCode() {
+            const currentUrl = window.location.href;
+            const qrCodeContainer = document.getElementById('qrcode');
+            
+            qrCodeContainer.innerHTML = '';
+            
+            new QRCode(qrCodeContainer, {
+                text: currentUrl,
+                width: 150,
+                height: 150,
+                colorDark: "#2c3e50",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function showQRCodePage() {
+            window.open('/qrcode-page', '_blank');
+        }
+
+        function downloadQRCode() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'file-transfer-qrcode.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showNotification('✅ تم تحميل QR Code بنجاح', 'success');
+            } else {
+                window.open('/generate-qrcode?format=png', '_blank');
+            }
+        }
+
+        function downloadFile(url, fileName) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function deleteFile(fileId) {
+            if (confirm('هل أنت متأكد من حذف هذا الملف؟')) {
+                socket.emit('delete-received-file', { fileId: fileId });
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getRandomAvatar() {
+            const avatars = ['👤', '👨‍💻', '👩‍💻', '🧑‍🎓', '👨‍🔬', '👩‍🔬', '🦸', '🦹', '🧙', '🧚', '🧛', '🧜'];
+            return avatars[Math.floor(Math.random() * avatars.length)];
+        }
+
+        function generateFileId() {
+            return 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `status ${type}`;
+            notification.innerHTML = message;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '1000';
+            notification.style.minWidth = '300px';
+            notification.style.maxWidth = 'calc(100vw - 40px)';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        window.selectUser = selectUser;
+        window.acceptRequest = acceptRequest;
+        window.rejectRequest = rejectRequest;
+        window.downloadFile = downloadFile;
+        window.deleteFile = deleteFile;
+        window.showQRCodePage = showQRCodePage;
+        window.downloadQRCode = downloadQRCode;
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                fetch('/generate_204').catch(() => {
+                    console.log('🌐 الاتصال بالشبكة المحلية');
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

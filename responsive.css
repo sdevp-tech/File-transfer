@@ -1,0 +1,281 @@
+/* responsive.css - تحسينات إضافية للاستجابة */
+
+/* تحسينات للشاشات الصغيرة جداً */
+@media (max-width: 320px) {
+    .app-header {
+        padding: 10px !important;
+    }
+    
+    .logo-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-section {
+        padding: 8px 12px !important;
+    }
+    
+    .btn {
+        padding: 10px 14px !important;
+        font-size: 0.9rem !important;
+        min-width: 90px !important;
+    }
+    
+    .mobile-menu {
+        padding: 10px 15px !important;
+        bottom: 10px !important;
+    }
+    
+    .menu-item {
+        min-width: 40px !important;
+        padding: 6px !important;
+    }
+    
+    .menu-item span {
+        font-size: 0.65rem !important;
+    }
+}
+
+/* تحسينات للشاشات المتوسطة */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .main-layout {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto auto !important;
+        gap: 20px !important;
+    }
+    
+    .sidebar {
+        width: 100% !important;
+        max-height: 300px !important;
+    }
+    
+    .users-sidebar {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    
+    .main-content {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+    }
+    
+    .files-sidebar {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+/* تحسينات للوضع الأفقي على الهواتف */
+@media (orientation: landscape) and (max-height: 500px) {
+    .app-header {
+        position: static !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .main-layout {
+        height: calc(100vh - 120px) !important;
+        display: flex !important;
+        flex-direction: row !important;
+    }
+    
+    .sidebar {
+        max-height: 100% !important;
+        width: 250px !important;
+    }
+    
+    .main-content {
+        margin-bottom: 0 !important;
+    }
+    
+    .mobile-menu {
+        display: none !important;
+    }
+}
+
+/* تحسينات للشاشات عالية الدقة */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .btn, .icon-btn, .user-card, .file-item {
+        border-width: 0.5px !important;
+    }
+    
+    .progress-bar-container {
+        height: 22px !important;
+    }
+    
+    .user-status-indicator {
+        width: 12px !important;
+        height: 12px !important;
+    }
+}
+
+/* تحسينات للوضع الداكن */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    }
+    
+    .app-header {
+        background: rgba(26, 37, 47, 0.95) !important;
+    }
+    
+    .upload-area {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(41, 128, 185, 0.1)) !important;
+    }
+    
+    .progress-bar-container {
+        background: #34495e !important;
+    }
+}
+
+/* تحسينات للأجهزة التي تدعم hover */
+@media (hover: hover) and (pointer: fine) {
+    .btn:hover {
+        transform: translateY(-2px) !important;
+    }
+    
+    .user-card:hover {
+        transform: translateY(-3px) !important;
+    }
+    
+    .icon-btn:hover {
+        transform: scale(1.1) !important;
+    }
+}
+
+/* تحسينات للأجهزة التي لا تدعم hover */
+@media (hover: none) and (pointer: coarse) {
+    .btn:active {
+        transform: scale(0.95) !important;
+    }
+    
+    .user-card:active {
+        transform: scale(0.98) !important;
+    }
+    
+    .icon-btn:active {
+        transform: scale(0.9) !important;
+    }
+}
+
+/* تحسينات لشاشات العرض الكبيرة */
+@media (min-width: 1920px) {
+    .app-container {
+        max-width: 1800px !important;
+        margin: 0 auto !important;
+        padding: 30px !important;
+    }
+    
+    .app-header {
+        padding: 30px !important;
+    }
+    
+    .logo {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 28px !important;
+    }
+    
+    .app-title h1 {
+        font-size: 2rem !important;
+    }
+    
+    .btn {
+        padding: 18px 36px !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .upload-area {
+        padding: 50px 30px !important;
+        min-height: 250px !important;
+    }
+}
+
+/* تحسينات للطباعة */
+@media print {
+    .mobile-menu,
+    .mobile-toggle,
+    .btn:not(.btn-primary),
+    .icon-btn,
+    .upload-area {
+        display: none !important;
+    }
+    
+    .app-container {
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    .app-header,
+    .sidebar,
+    .transfer-card,
+    .received-files {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        page-break-inside: avoid !important;
+    }
+    
+    .file-details-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* تحسينات للغة الإنجليزية */
+[lang="en"] .app-container {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+[lang="en"] .panel-title,
+[lang="en"] .file-name,
+[lang="en"] .user-name,
+[lang="en"] .user-name-small {
+    text-align: left !important;
+}
+
+/* تحسينات لإمكانية الوصول */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* تحسينات للتباين العالي */
+@media (prefers-contrast: high) {
+    :root {
+        --primary: #0066cc !important;
+        --secondary: #000000 !important;
+        --success: #007a00 !important;
+        --danger: #cc0000 !important;
+        --warning: #cc7a00 !important;
+    }
+    
+    .btn {
+        border: 2px solid currentColor !important;
+    }
+    
+    .upload-area {
+        border-width: 4px !important;
+    }
+}
+
+/* تحسينات للوضع القصير (للنصوص) */
+@media (prefers-reduced-data: reduce) {
+    .upload-icon i::before {
+        content: "📁" !important;
+    }
+    
+    .logo i::before {
+        content: "🔄" !important;
+    }
+    
+    .user-avatar,
+    .user-avatar-small {
+        background: var(--primary) !important;
+    }
+}
